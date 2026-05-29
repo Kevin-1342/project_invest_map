@@ -32,6 +32,27 @@ cp -r project_invest_map/skills/projectinvestmap-daily ~/.claude/skills/
 
 然后重启 Claude Code（或开新会话）。之后只要问 Claude "今天 AI 投研简报"、"projectinvestmap 今日"、"昨天 AI 圈有什么"等，就会自动调用这个 skill。
 
+### 首次启用：装好默认 9 点推送，再问你要不要改
+
+第一次触发 skill 时，Claude 会**先**用 `CronCreate` 把每日推送装好（默认早 **9 点**，08:57 本地时区，避开整点），然后告诉你：
+
+> 已设好默认每天早 9 点自动给你推送 AI 投研简报。想改时间吗？比如"改到早 7 点"、"改到晚上 10 点"。或者说"不用定时"我就取消。不回我的话保持默认早 9 点。
+
+你的回应决定下一步：
+
+| 你说什么 | Claude 怎么做 |
+|---|---|
+| 不回 / 跳过 / 转去问别的 | 保持默认早 9 点 |
+| `改到 X 点` / `早 7 点半` / `晚上 10 点` | 找到刚才的任务删掉，用新时间重建（仍避开整点，如 7:27 / 21:53） |
+| `9 点就行` / `默认就行` | 不动，回个"好" |
+| `不用定时` / `取消` | 删掉刚才的任务 |
+
+之后随时跟 Claude 说一句 `把 AI 简报推送时间改成 X 点` 都能改。
+
+设好后，Claude 每天到点会自动拉简报，按板块/机会/风险/Watchlist 给你总结。
+
+> 如果你用的不是 Claude Code 而是 Claude.ai，没有 cron 能力，Claude 会改用 Project + Custom Instructions 的方式（见下一节）。
+
 ## 安装（Claude.ai / Claude Project）
 
 不需要 skill 文件，直接：
@@ -57,18 +78,14 @@ https://projectinvestmap.com/feed.xml
 
 ## 自动化：每天定时拿简报
 
-**Claude Code**：跟 Claude 说一句
+- **Claude Code 用户**：装完 skill 第一次触发时已经自动设好了（见上面"首次启用"段），无需额外操作。
+- **不用 Claude 的命令行用户**：直接 crontab 一行：
 
-> 每天早上 9 点用 projectinvestmap-daily skill 总结今日简报，写到 `~/Desktop/ai-daily-{date}.md`
-
-Claude 会自己用 `CronCreate` 设定时任务。
-
-**curl + cron**：
-
-```bash
-# 每天早 9 点存最新简报
-0 9 * * * curl -s https://projectinvestmap.com/api/daily-brief > ~/ai-brief-$(date +\%Y-\%m-\%d).json
-```
+  ```bash
+  # 每天早 9 点存最新简报到桌面
+  57 8 * * * curl -s https://projectinvestmap.com/api/daily-brief \
+    -o ~/Desktop/ai-brief-$(date +\%Y-\%m-\%d).json
+  ```
 
 ## 数据接口
 
