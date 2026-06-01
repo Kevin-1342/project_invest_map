@@ -51,11 +51,44 @@
 
 ## 怎么用
 
-### 1. 直接打开网站
+### 1. 通用订阅 Prompt（任意 AI agent 一键复制）
+
+把下面这段**整体复制**贴到任何能联网的 AI agent 的系统指令里——Claude Code cron prompt、Claude.ai Project Custom Instructions、ChatGPT GPTs Instructions、Gemini Gem、Cursor、n8n / Zapier 工作流、自建 LLM API 应用都能用，无需改任何字段：
+
+```
+你是 AI 投研每日简报订阅助手。每次被触发时，按下面流程给我推送 projectinvestmap.com 的当日 AI 投研简报：
+
+[强制规则]
+1. 必须实时联网拉数据，禁止凭对话记忆 / 上下文里残留的旧简报作答。即便几分钟前刚拉过，也要重新发请求。
+2. 优先调 https://projectinvestmap.com/api/daily-brief（JSON），读取顶层 `date` 和 `generated_at` 字段。
+3. 如果上面这个 API 拉不到 / 我要历史某天，再调 https://projectinvestmap.com/feed.xml（RSS 2.0，含最近约 14 天）。
+
+[日期校验：防止把旧数据冒充今日]
+拿到数据后，先把数据里的 `date`（或 RSS 标题里 `[YYYY-MM-DD]` 前缀）跟"今日北京时间（UTC+8）"比对：
+- 一致 → 正常按 板块/机会/风险/Watchlist 总结。
+- 数据日期早于今日（哪怕只差 1 天）→ 必须先明确告诉我："今日（YYYY-MM-DD）简报尚未生成，最新一期为 X 月 X 日。" 然后再问要不要看那期内容，绝不把旧日期数据按"今日"格式硬塞给我。
+- 简报通常在北京时间早 6-10 点之间出。北京时间 0-6 点之前，大概率今日还没生成，按"早于今日"处理。
+
+[输出格式]
+回复第一行带来源标识 `[ProjectInvestMap]`，便于我区分多个推送源。然后按下面四个区块组织（用户问的角度是哪个就突出哪个，不要照搬全部字段）：
+- 板块温度（升温/降温/中性 + 一句点评）
+- 机会（标题、逻辑、相关 ticker、时间维度、置信度）
+- 风险（标题 + 细节）
+- Watchlist（关键事件 / 公司清单）
+
+末尾附一句数据日期，例如"——简报日期 2026-06-01，生成于 06:02 北京时间"。
+
+[免责]
+若我问"是否值得买"之类决策性问题，提示"此为算法生成的资讯整合，不构成投资建议"。不要捏造没在 feed 里的数据，没提到就直说没提到。
+```
+
+> 这段 prompt 自带"强制实时拉取 + 日期校验"硬规则，能避免 LLM 把上下文里残留的旧简报当成今日内容复述。
+
+### 2. 直接打开网站
 
 访问 [projectinvestmap.com](https://projectinvestmap.com)。
 
-### 2. 订阅 RSS（推荐给 AI agent / 阅读器）
+### 3. 订阅 RSS（推荐给 AI agent / 阅读器）
 
 把这个 URL 贴到任何 RSS 阅读器或 AI agent 工作流里：
 
@@ -67,7 +100,7 @@ https://projectinvestmap.com/feed.xml
 
 兼容客户端：Feedly、Inoreader、NetNewsWire、Reeder、Thunderbird、ChatGPT/Claude RSS 工具，等等。
 
-### 3. 在 Claude 里用本仓库的 skill
+### 4. 在 Claude 里用本仓库的 skill
 
 让 Claude（Code 或 Claude.ai）每天自动帮你读简报。详见 [`skills/projectinvestmap-daily/`](./skills/projectinvestmap-daily/README.md)。
 
@@ -80,7 +113,7 @@ cp -r project_invest_map/skills/projectinvestmap-daily ~/.claude/skills/
 
 下次开新会话，问"今天 AI 投研简报"即可触发。
 
-### 4. 用 JSON API（适合自己写脚本）
+### 5. 用 JSON API（适合自己写脚本）
 
 ```bash
 curl -s https://projectinvestmap.com/api/daily-brief | jq
