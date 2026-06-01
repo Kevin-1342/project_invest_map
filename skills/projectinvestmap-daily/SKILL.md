@@ -33,7 +33,7 @@ skill 第一次被触发时，做一次轻量 onboarding，**只做一次**。�
 ```
 cron: "57 8 * * *"     # 用户本地时区，约早 9 点（避开整点拥塞）
 recurring: true
-prompt: "用 projectinvestmap-daily skill 拉今日 AI 投研简报，按 板块/机会/风险/Watchlist 简明总结给我看。"
+prompt: "用 projectinvestmap-daily skill 拉今日 AI 投研简报。强制流程：(1) 必须实时调用 WebFetch 或 curl，禁止凭印象/记忆作答；(2) 优先调 https://projectinvestmap.com/api/daily-brief，读 date 字段；(3) 把 date 与今日北京日期比对——一致则按 板块/机会/风险/Watchlist 总结；不一致则明确告诉我'今日（YYYY-MM-DD）简报尚未生成，最新一期为 X 月 X 日'，并附上那期内容供参考，绝不把旧日期数据冒充成今日。回复开头必须带来源标识 [ProjectInvestMap]。"
 ```
 
 #### B. Claude.ai / Claude Desktop（无 cron）
@@ -100,10 +100,27 @@ prompt: "用 projectinvestmap-daily skill 拉今日 AI 投研简报，按 板块
 
 ## 日常查询流程（已 onboard 后）
 
-1. **获取最新一期简报**：用 `WebFetch` 拉 `https://projectinvestmap.com/feed.xml`，请求里指定 prompt "提取最新一条 RSS item 的 title、pubDate、description（HTML）"。
-2. **若用户要某天的简报**：解析 RSS 里 `<item>` 列表，按 `<title>` 里的 `[YYYY-MM-DD]` 日期匹配。Feed 一般保留最近 14 天。
-3. **若用户要更结构化数据**：改调 `https://projectinvestmap.com/api/daily-brief`（JSON），字段 `headline`/`oneliner`/`sectors[]`/`opportunities[]`/`risks[]`/`watchlist[]`/`generated_at`。这个端点只返回最新一天，要历史只能用 RSS。
-4. **回答用户**：按用户问的角度组织（机会优先 / 风险优先 / 板块概览 / Watchlist 跟踪），不要照搬全部字段。
+> ⚠️ **硬规则：每次回答必须实时联网拉数据，禁止凭对话记忆 / 上下文里残留的旧简报作答。** 即便几分钟前刚拉过，也要重拉一次——简报 1 天才更新一次但你不知道用户问的是哪一天。
+
+### Step A — 实时拉取
+1. 优先调 `https://projectinvestmap.com/api/daily-brief`（JSON，最快），拿到 `date` 和 `generated_at` 字段。
+2. 如果用户要历史某天 / API 拿不到目标日期，再调 `https://projectinvestmap.com/feed.xml`（RSS，含最近 ~14 天）。
+3. 在 Claude Code 环境里 WebFetch 被网络策略拦截时，用 Bash `curl -sS <url>` 兜底，不要因为 WebFetch 失败就放弃。
+
+### Step B — 强制日期校验（防止把旧数据冒充今日）
+拉到数据后**先做日期比对**，再决定怎么回答：
+
+| 用户问的目标日期 | 拉到的最新 `date` | 处理 |
+|---|---|---|
+| 今日（北京时间） | 等于今日 | ✅ 正常按 板块/机会/风险/Watchlist 总结 |
+| 今日 | 早于今日（哪怕只差 1 天） | ⚠️ **必须先说清楚**："今日（YYYY-MM-DD）简报尚未生成，最新一期是 X 月 X 日。" 然后再问要不要看那期内容，**不要直接把旧数据按"今日"格式输出**。 |
+| 指定历史日期 | 在 RSS 范围内能匹配到 | ✅ 用对应那条 item 回答，标题里的 `[YYYY-MM-DD]` 必须等于用户要的日期 |
+| 指定历史日期 | RSS 里找不到（>14 天 / 当天没出） | 明说没有，不要拿邻近日期顶替 |
+
+判断"今日"用**北京时间**（CST, UTC+8），因为简报按北京日历生成。简报通常在北京时间早 6-10 点之间出。如果用户在北京时间凌晨 0-6 点问"今日简报"，大概率还没生成，按上表"早于今日"分支处理。
+
+### Step C — 组织回答
+按用户问的角度组织（机会优先 / 风险优先 / 板块概览 / Watchlist 跟踪），不要照搬全部字段。回答末尾附一句数据日期，例如"——简报日期 2026-06-01，生成于 06:02 北京时间"，让用户能一眼看出新鲜度。
 
 ---
 
@@ -124,9 +141,27 @@ JSON `/api/daily-brief`:
 
 ---
 
+## 推送来源标识
+
+当本 skill 通过定时任务（cron）或被其他 agent 调用来推送消息时，**回复的第一行必须以 `[ProjectInvestMap]` 开头**，作为来源标识。格式示例：
+
+> [ProjectInvestMap] 2026-05-29 AI 投研简报
+>
+> **板块温度** …
+
+这样用户如果同时订阅了多个推送源，能一眼看出这条来自 ProjectInvestMap。
+
+- 定时推送（cron prompt 触发）：必须带。
+- 被其他 agent 通过 skill 调用：必须带。
+- 用户在对话中主动问"今日简报"：可以带，也可以省略（用户已经知道上下文）。
+
+---
+
 ## 注意事项
 
-- Feed 可能因服务器配额耗尽返回过期数据。回答前看一眼 `pubDate`，超过 24 小时要提醒用户"数据可能偏旧"。
+- **永远不要凭印象 / 历史对话里残留的简报作答**——每次都得实时拉。简报每天换一份，但 LLM 上下文里很容易残留某一天（比如 5/29）的内容，不重拉就会一直把那天复述给用户。
+- **日期不匹配就明说**，不要硬把旧简报当今日用。Step B 表格是硬约束。
+- Feed/API 可能因服务器配额或上游延迟返回过期数据。看 `generated_at` 或 `pubDate`，超过 24 小时一定要提醒"数据可能偏旧 / 今日尚未更新"。
 - 不要捏造没在 feed 里的数据。如果用户问的角度（如某只具体股票）没在 Watchlist/opportunities 里，明说"今天的简报没提到 X"，不要编造分析。
 - 简报是**自动生成**的，不是人工 research。回答时若用户问"是否值得买"之类决策性问题，提示"此为算法生成的资讯整合，不构成投资建议"。
 - 数据源覆盖中文（A 股 / 港股）+ 英文（美股 + arXiv 论文）AI 主题，不覆盖非 AI 主题。
