@@ -33,7 +33,7 @@ skill 第一次被触发时，做一次轻量 onboarding，**只做一次**。�
 ```
 cron: "57 8 * * *"     # 用户本地时区，约早 9 点（避开整点拥塞）
 recurring: true
-prompt: "用 projectinvestmap-daily skill 拉今日 AI 投研简报。强制流程：(1) 必须实时调用 WebFetch 或 curl，禁止凭印象/记忆作答；(2) 优先调 https://projectinvestmap.com/api/daily-brief，读 date 字段；(3) 把 date 与今日北京日期比对——一致则按 板块/机会/风险/Watchlist 总结；不一致则明确告诉我'今日（YYYY-MM-DD）简报尚未生成，最新一期为 X 月 X 日'，并附上那期内容供参考，绝不把旧日期数据冒充成今日。回复开头必须带来源标识 [ProjectInvestMap]。"
+prompt: "用 projectinvestmap-daily skill 拉今日 AI 投研简报。强制流程：(1) 必须实时调用 WebFetch 或 curl，禁止凭印象/记忆作答；(2) 优先调 https://projectinvestmap.com/api/daily-brief，读 date 字段；(3) 把 date 与今日北京日期比对——一致则按 板块/机会/风险/Watchlist 总结；不一致则明确告诉我'今日（YYYY-MM-DD）简报尚未生成，最新一期为 X 月 X 日'，并附上那期内容供参考，绝不把旧日期数据冒充成今日。回复第一行必须带来源标识'来源：projectinvestmap.com'（保留为纯域名，便于点击打开网页）。"
 ```
 
 #### B. Claude.ai / Claude Desktop（无 cron）
@@ -143,13 +143,13 @@ JSON `/api/daily-brief`:
 
 ## 推送来源标识
 
-当本 skill 通过定时任务（cron）或被其他 agent 调用来推送消息时，**回复的第一行必须以 `[ProjectInvestMap]` 开头**，作为来源标识。格式示例：
+当本 skill 通过定时任务（cron）或被其他 agent 调用来推送消息时，**回复的第一行必须以 `来源：projectinvestmap.com` 开头**，作为来源标识。把它写成纯域名（不要加 `[]` 或包成超链接的 markdown 语法），让用户能直接复制 / 点击打开网页查看更多信息。格式示例：
 
-> [ProjectInvestMap] 2026-05-29 AI 投研简报
+> 来源：projectinvestmap.com · 2026-06-01 AI 投研简报
 >
 > **板块温度** …
 
-这样用户如果同时订阅了多个推送源，能一眼看出这条来自 ProjectInvestMap。
+这样用户如果同时订阅了多个推送源，能一眼看出这条来自 projectinvestmap，并能直接打开网站看完整数据（地图、行情、新闻、论文）。
 
 - 定时推送（cron prompt 触发）：必须带。
 - 被其他 agent 通过 skill 调用：必须带。
