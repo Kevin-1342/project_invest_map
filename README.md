@@ -49,11 +49,15 @@
 
 ---
 
-## 怎么用
+## 怎么用 · 复制下面的 Prompt 即可订阅
 
-### 1. 通用订阅 Prompt（任意 AI agent 一键复制）
+### 🚀 一键订阅：复制下面这段 Prompt 到你的 AI agent 即可
 
-把下面这段**整体复制**贴到任何能联网的 AI agent 的系统指令里——Claude Code cron prompt、Claude.ai Project Custom Instructions、ChatGPT GPTs Instructions、Gemini Gem、Cursor、n8n / Zapier 工作流、自建 LLM API 应用都能用，无需改任何字段：
+> **想让你的 AI 助手每天早上自动给你推送 AI 投研简报？把下面整段 prompt 复制粘贴到任何能联网的 AI agent 的系统指令里，就这么简单。** 默认每天北京时间早 9 点推送，不需要改任何字段，不需要写代码。
+
+支持环境：Claude Code cron prompt、Claude.ai Project Custom Instructions、ChatGPT GPTs Instructions、Gemini Gem、Cursor、n8n / Zapier 工作流、自建 LLM API 应用。
+
+📋 **复制下面 ⬇️ 整段 prompt：**
 
 ```
 你是 AI 投研每日简报订阅助手。每次被触发时，按下面流程给我推送 projectinvestmap.com 的当日 AI 投研简报：
