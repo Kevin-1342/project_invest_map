@@ -49,11 +49,15 @@
 
 ---
 
-## 怎么用 · 复制下面的 Prompt 即可订阅
+## ⭐ 怎么用 · 复制下面的 Prompt 即可订阅 ⭐
 
-### 🚀 一键订阅：复制下面这段 Prompt 到你的 AI agent 即可
+### 🚀 一键订阅 — 复制下面这段 Prompt 到你的 AI agent 即可 🌟
 
-> **想让你的 AI 助手每天早上自动给你推送 AI 投研简报？把下面整段 prompt 复制粘贴到任何能联网的 AI agent 的系统指令里，就这么简单。** 默认每天北京时间早 9 点推送，不需要改任何字段，不需要写代码。
+> [!TIP]
+> ### ✨ 想让 AI 每天早上自动推送 AI 投研简报？
+> **复制下面整段 prompt → 贴到任何能联网的 AI agent 的系统指令里 → 完成订阅。**
+>
+> 🕘 默认每天北京时间早 9 点推送 · 🛠️ 不需要改字段 · 💻 不需要写代码
 
 支持环境：Claude Code cron prompt、Claude.ai Project Custom Instructions、ChatGPT GPTs Instructions、Gemini Gem、Cursor、n8n / Zapier 工作流、自建 LLM API 应用。
 
